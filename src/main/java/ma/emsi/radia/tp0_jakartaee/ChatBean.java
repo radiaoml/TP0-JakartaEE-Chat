@@ -1,21 +1,26 @@
-package ma.emsi.radia.tp0_jakartaee; 
+package ma.emsi.radia.tp0_jakartaee;
 
 import jakarta.inject.Named;
-import jakarta.faces.view.ViewScoped; 
+import jakarta.faces.view.ViewScoped;
+import ma.emsi.radia.tp0_jakartaee.api.ChatApi;
+import jakarta.inject.Inject; // 👈 1. ADD THIS REQUIRED IMPORT for @Inject
 import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@Named("bb") 
-@ViewScoped 
+@Named("bb")
+@ViewScoped
 public class ChatBean implements Serializable {
 
     // Properties mapped to the XHTML fields
     private String roleSysteme = "Traducteur Anglais-Français";
-    private boolean roleSystemeChangeable = true; // Used for disabled attribute on p:selectOneMenu
+    private boolean roleSystemeChangeable = true;
     private String question;
     private String reponse;
     private String conversation = "";
+
+    @Inject // 👈 2. INJECT THE SERVICE PROPERTY HERE
+    private ChatApi chatService;
 
     // Map to hold the list of roles for p:selectOneMenu
     private final Map<String, String> rolesSysteme;
@@ -26,33 +31,32 @@ public class ChatBean implements Serializable {
         rolesSysteme.put("Traducteur Anglais-Français", "Traducteur Anglais-Français");
         rolesSysteme.put("Correcteur de texte", "Correcteur de texte");
         rolesSysteme.put("Assistant de programmation", "Assistant de programmation");
-        rolesSysteme.put("helpful assistant", "helpful assistant"); // Added as seen in the UI image
+        rolesSysteme.put("helpful assistant", "helpful assistant");
     }
 
     // ********** ACTION METHODS **********
 
     /**
-     * Handles the 'Envoyer la question' button click.
-     * Implements the required simple processing: adds role, changes case, adds ||.
+     * Handles the 'Envoyer la question' button click, delegating processing to ChatApi.
      * @return null to stay on the same view and preserve the @ViewScoped bean instance.
      */
     public String envoyer() {
-        // ... (previous checks and processing code remains the same) ...
+        if (question == null || question.trim().isEmpty()) {
+            reponse = "Veuillez saisir une question.";
+            return null;
+        }
 
         // 1. Disable role selection after the first question is sent
         roleSystemeChangeable = false;
 
-        // 2. Perform the simple required processing
-        String processedText = question.toUpperCase();
-        reponse = "||Rôle: " + roleSysteme + " | " + processedText + "||";
+        // 2. DELEGATE PROCESSING TO THE SERVICE
+        reponse = chatService.sendMessage(roleSysteme, question); // 👈 3. CALL SERVICE METHOD
 
         // 3. Update conversation history with clear line breaks
-        // Ensure a newline before the new entry starts if the conversation is not empty
         if (!conversation.isEmpty()) {
-            conversation += "\n"; 
+            conversation += "\n";
         }
         
-        // This structure closely mimics the desired output:
         conversation += "* Rôle de l'API: " + roleSysteme + "\n"
                       + "* Utilisateur:\n" + question + "\n"
                       + "* Serveur:\n" + reponse + "\n";
@@ -71,7 +75,6 @@ public class ChatBean implements Serializable {
     public String effacer() {
         this.question = null;
         this.reponse = null;
-        // The conversation history is intentionally kept here.
         return null;
     }
     
@@ -81,9 +84,7 @@ public class ChatBean implements Serializable {
      * and creating a new one (resetting the entire application state/conversation).
      */
     public String nouveauChat() {
-        // Note: The return value must match the resource name used in web.xml or navigation rules.
-        // Assuming your page is index.xhtml:
-        return "index.xhtml"; 
+        return "index.xhtml";
     }
 
     // ********** GETTERS AND SETTERS **********
@@ -98,10 +99,8 @@ public class ChatBean implements Serializable {
     public void setReponse(String reponse) { this.reponse = reponse; }
 
     public String getConversation() { return conversation; }
-    // No setter for conversation, as it's only updated by the server logic
-
+    
     public boolean isRoleSystemeChangeable() { return roleSystemeChangeable; }
-    // No setter for roleSystemeChangeable, as it's updated only in the bean
-
+    
     public Map<String, String> getRolesSysteme() { return rolesSysteme; }
 }

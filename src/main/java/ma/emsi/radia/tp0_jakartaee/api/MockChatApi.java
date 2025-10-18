@@ -1,3 +1,4 @@
+package ma.emsi.radia.tp0_jakartaee.api;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
