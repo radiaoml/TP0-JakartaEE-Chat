@@ -14,5 +14,3 @@ function toutEffacer() {
     document.getElementById("form:question").value = "";
     document.getElementById("form:reponse").value = "";
 }
-
-
